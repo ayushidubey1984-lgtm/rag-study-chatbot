@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My RAG Chatbot</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<div class="doodle rocket">🚀</div>
+<div class="doodle brain">🧠</div>
+<div class="doodle pen">✏️</div>
+<div class="doodle star">⭐</div>
+<div class="doodle book">📚</div>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <header>
+
+        <div class="robot">🤖</div>
+
+        <h1>My RAG Chatbot</h1>
+
+        <p>
+            Upload your PDF and chat with your document ✨
+        </p>
+
+    </header>
+
+
+    <!-- PDF UPLOAD SECTION -->
+    <section class="upload-card">
+
+        <h2>📄 Upload Your PDF</h2>
+
+        <p>
+            Give your chatbot some knowledge!
+        </p>
+
+        <form id="uploadForm">
+
+            <div class="file-area">
+
+                <div class="upload-icon">
+                    📤
+                </div>
+
+                <label for="pdfFile">
+                    Choose PDF
+                </label>
+
+                <input
+                        type="file"
+                        id="pdfFile"
+                        name="file"
+                        accept=".pdf,application/pdf"
+                        required
+                >
+
+                <span id="fileName">
+                    No file selected
+                </span>
+
+            </div>
+
+            <button
+                    type="submit"
+                    class="upload-btn"
+                    id="uploadButton">
+
+                🚀 Upload PDF
+
+            </button>
+
+        </form>
+
+        <div id="uploadMessage"></div>
+
+    </section>
+
+
+    <!-- CHAT SECTION -->
+    <section class="chat-card">
+
+        <!-- CHAT HEADER -->
+        <div class="chat-header">
+
+            <div class="bot-avatar">
+                🤖
+            </div>
+
+            <div>
+
+                <h2>
+                    AI Study Buddy
+                </h2>
+
+                <span>
+                    ● Online
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- CHAT BOX -->
+        <div id="chatBox" class="chat-box">
+
+            <div class="message bot-message">
+
+                <div class="message-avatar">
+                    🤖
+                </div>
+
+                <div class="bubble">
+
+                    <b>Hey! 👋</b>
+
+                    <p>
+                        Upload a PDF and ask me anything about it!
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- QUESTION INPUT -->
+        <form id="questionForm" class="question-form">
+
+            <input
+                    type="text"
+                    id="question"
+                    name="question"
+                    placeholder="Ask something about your PDF..."
+                    autocomplete="off"
+                    required
+            >
+
+            <button type="submit">
+                Send 🚀
+            </button>
+
+        </form>
+
+
+        <!-- EXAMPLE QUESTIONS -->
+        <div class="examples">
+
+            <span>
+                💡 Try asking:
+            </span>
+
+            <button
+                    type="button"
+                    onclick="askExample('Who is the director?')">
+
+                🎬 Who is the director?
+
+            </button>
+
+            <button
+                    type="button"
+                    onclick="askExample('Who are the actors?')">
+
+                👤 Who are the actors?
+
+            </button>
+
+            <button
+                    type="button"
+                    onclick="askExample('What is the story?')">
+
+                📖 What is the story?
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <footer>
+        Made with 💗 Java + Spring Boot
+    </footer>
+
+</div>
+
+
+<script>
+
+    // =========================================
+    // SHOW SELECTED FILE NAME
+    // =========================================
+
+    document
+        .getElementById("pdfFile")
+        .addEventListener("change", function () {
+
+            const file = this.files[0];
+
+            const fileName = document.getElementById("fileName");
+
+            if (file) {
+                fileName.textContent = "Selected: " + file.name;
+            } else {
+                fileName.textContent = "No file selected";
+            }
+
+        });
+
+
+    // =========================================
+    // PDF UPLOAD
+    // =========================================
+
+    document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async function (event) {
+
+            event.preventDefault();
+
+            const fileInput = document.getElementById("pdfFile");
+
+            const uploadButton = document.getElementById("uploadButton");
+
+            const uploadMessage = document.getElementById("uploadMessage");
+
+            // Check file
+            if (fileInput.files.length === 0) {
+
+                uploadMessage.textContent =
+                    "❌ Please select a PDF first.";
+
+                return;
+            }
+
+            const file = fileInput.files[0];
+
+            // Check PDF
+            if (file.type !== "application/pdf" &&
+                !file.name.toLowerCase().endsWith(".pdf")) {
+
+                uploadMessage.textContent =
+                    "❌ Please select a PDF file.";
+
+                return;
+            }
+
+            // Create FormData
+            const formData = new FormData();
+
+            formData.append("file", file);
+
+            // Button state
+            uploadButton.disabled = true;
+
+            uploadButton.textContent =
+                "⏳ Uploading...";
+
+            uploadMessage.textContent =
+                "Please wait...";
+
+
+            try {
+
+                // Send PDF to Spring Boot
+                const response = await fetch("/api/upload", {
+
+                    method: "POST",
+
+                    body: formData
+
+                });
+
+
+                const result = await response.text();
+
+
+                if (response.ok) {
+
+                    uploadMessage.textContent =
+                        "✅ " + result;
+
+                    uploadMessage.style.color =
+                        "green";
+
+                } else {
+
+                    uploadMessage.textContent =
+                        "❌ Upload failed: " + result;
+
+                    uploadMessage.style.color =
+                        "red";
+                }
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                uploadMessage.textContent =
+                    "❌ Could not connect to the server.";
+
+                uploadMessage.style.color =
+                    "red";
+
+            } finally {
+
+                uploadButton.disabled = false;
+
+                uploadButton.textContent =
+                    "🚀 Upload PDF";
+
+            }
+
+        });
+
+
+    // =========================================
+    // ASK QUESTION
+    // =========================================
+
+    document
+        .getElementById("questionForm")
+        .addEventListener("submit", async function (event) {
+
+            event.preventDefault();
+
+            const input =
+                document.getElementById("question");
+
+            const question =
+                input.value.trim();
+
+            if (question === "") {
+                return;
+            }
+
+            // Show user message
+            addMessage(
+                question,
+                "user"
+            );
+
+            // Clear input
+            input.value = "";
+
+            try {
+
+                // Encode question safely
+                const url =
+                    "/api/ask?question=" +
+                    encodeURIComponent(question);
+
+                const response =
+                    await fetch(url);
+
+                const answer =
+                    await response.text();
+
+
+                // Show bot answer
+                addMessage(
+                    answer,
+                    "bot"
+                );
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                addMessage(
+                    "❌ Could not connect to the server.",
+                    "bot"
+                );
+
+            }
+
+        });
+
+
+    // =========================================
+    // ADD MESSAGE TO CHAT
+    // =========================================
+
+    function addMessage(text, sender) {
+
+        const chatBox =
+            document.getElementById("chatBox");
+
+
+        const message =
+            document.createElement("div");
+
+        message.className =
+            sender === "user"
+                ? "message user-message"
+                : "message bot-message";
+
+
+        const avatar =
+            document.createElement("div");
+
+        avatar.className =
+            "message-avatar";
+
+        avatar.textContent =
+            sender === "user"
+                ? "👤"
+                : "🤖";
+
+
+        const bubble =
+            document.createElement("div");
+
+        bubble.className =
+            "bubble";
+
+        bubble.textContent =
+            text;
+
+
+        message.appendChild(avatar);
+
+        message.appendChild(bubble);
+
+        chatBox.appendChild(message);
+
+
+        // Scroll to bottom
+        chatBox.scrollTop =
+            chatBox.scrollHeight;
+
+    }
+
+
+    // =========================================
+    // EXAMPLE QUESTION
+    // =========================================
+
+    function askExample(question) {
+
+        const input =
+            document.getElementById("question");
+
+        input.value = question;
+
+        document
+            .getElementById("questionForm")
+            .dispatchEvent(
+                new Event("submit")
+            );
+
+    }
+
+</script>
+
+</body>
+
+</html>
